@@ -1,0 +1,10 @@
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.34,<0.35
+onnxruntime==1.24.4
+faiss-cpu>=1.11.0
+transformers>=4.44.2
+numpy>=1.26
+pillow>=11.0.0
+python-multipart>=0.0.20
+opencv-python>=4.11.0.86
+tqdm>=4.67.1
