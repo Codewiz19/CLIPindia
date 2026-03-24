@@ -1,0 +1,22 @@
+# Environment files
+.env
+venv/
+
+# ONNX / checkpoints / bundles
+*.onnx
+*.pt
+*.bin
+*.safetensors
+*.pkl
+
+
+# Export/model folders
+clipindia_export_bundle/
+**/hf_model/
+**/hf_processor/
+
+# Optional large media/index artifacts
+**/storage/
+*.faiss
+*.index
+*.db
