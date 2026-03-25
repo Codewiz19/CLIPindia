@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClothIndia Vision Search</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --surface: #ffffff;
+      --surface-2: #fbfcff;
+      --text: #171c28;
+      --muted: #667089;
+      --accent: #5a6cff;
+      --accent-2: #7d4dff;
+      --line: #e7ecf5;
+      --ring: #d9e2ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 12% -8%, #ebf0ff 0%, rgba(235, 240, 255, 0) 55%),
+        radial-gradient(1000px 550px at 100% -15%, #f2ebff 0%, rgba(242, 235, 255, 0) 55%),
+        var(--bg);
+      color: var(--text);
+    }
+    .container {
+      max-width: 1140px;
+      margin: 28px auto 44px;
+      padding: 0 18px;
+    }
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .title {
+      font-size: clamp(26px, 3.6vw, 34px);
+      margin: 0 0 6px;
+      letter-spacing: 0.1px;
+      line-height: 1.1;
+    }
+    .subtitle {
+      color: var(--muted);
+      margin: 0;
+      font-size: 14px;
+    }
+    .pill {
+      font-size: 12px;
+      color: #3f52c7;
+      background: linear-gradient(180deg, #eef2ff 0%, #e7edff 100%);
+      border: 1px solid #dbe4ff;
+      border-radius: 999px;
+      padding: 7px 11px;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .card {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 12px 34px rgba(29, 40, 77, .07);
+    }
+    .grid { display: grid; gap: 12px; }
+    .controls {
+      display: grid;
+      grid-template-columns: 1.3fr 1.4fr 1.7fr .9fr 1.1fr .9fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .controls > * { min-width: 0; }
+    input, select, button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+    input:focus, select:focus {
+      outline: 2px solid var(--ring);
+      border-color: #b9c7ff;
+    }
+    input[type="range"] { padding: 0; }
+    input[type="file"] {
+      cursor: pointer;
+    }
+    button {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(90,108,255,.32);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 20px rgba(90,108,255,.34);
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .query-panel {
+      margin-top: 8px;
+      border: 1px dashed #d5def3;
+      border-radius: 14px;
+      padding: 10px;
+      background: #f9fbff;
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .query-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #eef2fb;
+      border: 1px solid #e1e8fb;
+    }
+    .query-title { font-size: 13px; font-weight: 600; }
+    .hidden { display: none; }
+    .results-header {
+      margin: 16px 4px 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .results {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+    }
+    .item {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(22,36,80,.10);
+    }
+    .thumb {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #f1f4fb;
+    }
+    .meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .score {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #3e56c4;
+      font-weight: 700;
+      background: #edf1ff;
+      border: 1px solid #dce5ff;
+      border-radius: 999px;
+      padding: 3px 8px;
+    }
+    .empty-state {
+      border: 1px dashed #d8e0f2;
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+      color: var(--muted);
+      background: #fafcff;
+      font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .hero { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div>
+        <h1 class="title">ClothIndia Vision Search</h1>
+        <p class="subtitle">Multimodal local search powered by ONNX + FAISS</p>
+      </div>
+      <div class="pill">Top-k: 3 to 5 • Local only</div>
+    </div>
+
+    <div class="card grid">
+      <div class="controls">
+        <select id="mode">
+          <option value="compositional">Image + text (recommended)</option>
+          <option value="image">Image only</option>
+          <option value="text">Text only</option>
+        </select>
+
+        <input id="image" type="file" accept="image/*" />
+        <input id="text" type="text" placeholder="same green kurta" />
+
+        <select id="topk">
+          <option value="3">Top 3</option>
+          <option value="5" selected>Top 5</option>
+        </select>
+
+        <div>
+          <input id="alpha" type="range" min="0" max="1" step="0.05" value="0.65" />
+          <div class="hint">alpha: <span id="alphaVal">0.65</span></div>
+        </div>
+
+        <button id="searchBtn">Search</button>
+      </div>
+      <div class="hint">Tip: try “a product photo of blue kurta, for women, ethnic wear”.</div>
+
+      <div id="queryPanel" class="query-panel hidden">
+        <img id="queryPreview" class="query-thumb" alt="query image" />
+        <div>
+          <div class="query-title">Current query image</div>
+          <div id="queryMeta" class="hint">No image selected</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultsHeader" class="results-header"></div>
+    <div id="results" class="results">
+      <div class="empty-state">Run a search to see visual results here.</div>
+    </div>
+  </div>
+
+  <script>
+    const byId = (id) => document.getElementById(id);
+    const mode = byId('mode');
+    const image = byId('image');
+    const text = byId('text');
+    const topk = byId('topk');
+    const alpha = byId('alpha');
+    const alphaVal = byId('alphaVal');
+    const searchBtn = byId('searchBtn');
+    const results = byId('results');
+    const queryPanel = byId('queryPanel');
+    const queryPreview = byId('queryPreview');
+    const queryMeta = byId('queryMeta');
+    const resultsHeader = byId('resultsHeader');
+
+    let queryObjectUrl = null;
+
+    alpha.addEventListener('input', () => alphaVal.textContent = alpha.value);
+
+    function clearQueryPreview() {
+      if (queryObjectUrl) {
+        URL.revokeObjectURL(queryObjectUrl);
+        queryObjectUrl = null;
+      }
+      queryPreview.removeAttribute('src');
+      queryMeta.textContent = 'No image selected';
+      queryPanel.classList.add('hidden');
+    }
+
+    function refreshQueryPreview() {
+      const needsImage = mode.value !== 'text';
+      if (!needsImage || !image.files.length) {
+        clearQueryPreview();
+        return;
+      }
+
+      if (queryObjectUrl) URL.revokeObjectURL(queryObjectUrl);
+      queryObjectUrl = URL.createObjectURL(image.files[0]);
+      queryPreview.src = queryObjectUrl;
+      queryMeta.textContent = image.files[0].name;
+      queryPanel.classList.remove('hidden');
+    }
+
+    mode.addEventListener('change', refreshQueryPreview);
+    image.addEventListener('change', refreshQueryPreview);
+
+    function card(item) {
+      const p = item.preview_path || item.source_path || '';
+      const isImage = /\.(jpg|jpeg|png|webp|bmp|gif)$/i.test(p);
+      const imgSrc = isImage ? `/media?path=${encodeURIComponent(p)}` : '';
+      return `
+        <div class="item">
+          ${isImage ? `<img class="thumb" src="${imgSrc}" alt="result" loading="lazy" />` : '<div class="thumb"></div>'}
+          <div><strong>${item.title || 'fashion item'}</strong></div>
+          <div class="meta">${item.media_type}${item.timestamp_sec != null ? ` • ${item.timestamp_sec.toFixed(1)}s` : ''}</div>
+          <div class="meta">${item.category || 'fashion'} • ${item.color || 'unknown'}</div>
+          <div class="score">score: ${Number(item.score).toFixed(4)}</div>
+        </div>`;
+    }
+
+    async function runSearch() {
+      searchBtn.disabled = true;
+      results.innerHTML = '';
+      resultsHeader.textContent = 'Searching...';
+
+      const m = mode.value;
+      const form = new FormData();
+      form.append('top_k', topk.value);
+
+      let endpoint = '/search/compositional';
+      if (m === 'image') endpoint = '/search/image';
+      if (m === 'text') endpoint = '/search/text';
+
+      if (m !== 'text') {
+        if (!image.files.length) {
+          alert('Please choose an image.');
+          searchBtn.disabled = false;
+          return;
+        }
+        form.append('image', image.files[0]);
+      }
+      if (m !== 'image') {
+        if (!text.value.trim()) {
+          alert('Please enter text query/intent.');
+          searchBtn.disabled = false;
+          return;
+        }
+      }
+
+      if (m === 'text') form.append('text', text.value.trim());
+      if (m === 'compositional') {
+        form.append('text_intent', text.value.trim());
+        form.append('alpha', alpha.value);
+      }
+
+      try {
+        const res = await fetch(endpoint, { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Search failed');
+        if (!data.results?.length) {
+          resultsHeader.textContent = 'No matches found';
+          results.innerHTML = '<div class="meta">No results found.</div>';
+        } else {
+          resultsHeader.textContent = `Showing ${data.results.length} result(s) • mode: ${data.query_mode}`;
+          results.innerHTML = data.results.map(card).join('');
+        }
+      } catch (e) {
+        resultsHeader.textContent = 'Search failed';
+        results.innerHTML = `<div class="meta">${e.message}</div>`;
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+
+    refreshQueryPreview();
+    searchBtn.addEventListener('click', runSearch);
+  </script>
+</body>
+</html>

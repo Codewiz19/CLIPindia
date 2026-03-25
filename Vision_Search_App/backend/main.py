@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import unquote
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -43,10 +44,38 @@ app.add_middleware(
 static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"}
+
 
 @app.get("/")
 def index():
-    return FileResponse(static_dir / "index.html")
+    return FileResponse(
+        static_dir / "index.html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
+@app.get("/media")
+def media(path: str = Query(..., description="Absolute file path to image")):
+    decoded = unquote(path)
+    p = Path(decoded).expanduser().resolve()
+
+    if not p.exists() or not p.is_file():
+        raise HTTPException(status_code=404, detail="Image file not found")
+
+    if p.suffix.lower() not in IMAGE_EXTS:
+        raise HTTPException(status_code=400, detail="Unsupported media type")
+
+    # Keep local-serving safe: only allow files from workspace project root.
+    root = settings.project_root.resolve()
+    if not str(p).lower().startswith(str(root).lower()):
+        raise HTTPException(status_code=403, detail="Path outside project root")
+
+    return FileResponse(p)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -112,8 +141,9 @@ def search_text(
     if embedder is None or store is None:
         raise HTTPException(status_code=500, detail="Service not initialized")
 
-    text_emb = embedder.embed_text(text)
-    results = store.search(text_emb, top_k=top_k, text_hint=text)
+    normalized_text = embedder.normalize_user_query(text)
+    text_emb = embedder.embed_text(normalized_text)
+    results = store.search(text_emb, top_k=top_k, text_hint=normalized_text)
     return SearchResponse(query_mode="text", top_k=min(max(top_k, 3), 5), results=results)
 
 
@@ -131,10 +161,11 @@ def search_compositional(
     pil = _read_image_upload(image)
 
     image_emb = embedder.embed_image(pil)
-    text_emb = embedder.embed_text(text_intent)
+    normalized_text = embedder.normalize_user_query(text_intent)
+    text_emb = embedder.embed_text(normalized_text)
     query_vec = embedder.compose_query(image_emb, text_emb, alpha=alpha)
 
-    results = store.search(query_vec, top_k=top_k, text_hint=text_intent)
+    results = store.search(query_vec, top_k=top_k, text_hint=normalized_text)
     return SearchResponse(
         query_mode="compositional",
         top_k=min(max(top_k, 3), 5),

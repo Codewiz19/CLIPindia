@@ -12,11 +12,11 @@ class Settings(BaseModel):
     base_dir: Path = Path(__file__).resolve().parent.parent
     project_root: Path = base_dir.parent
 
-    vision_onnx_path: Path = project_root / "siglip_vision.onnx"
-    text_onnx_path: Path = project_root / "siglip_text.onnx"
+    vision_onnx_path: Path = project_root / "Ai Engine" / "onnx Model" / "vision.onnx"
+    text_onnx_path: Path = project_root / "Ai Engine" / "onnx Model" / "text.onnx"
     processor_dir: Path = project_root / "clipindia_export_bundle" / "hf_processor"
 
-    storage_dir: Path = base_dir / "storage"
+    storage_dir: Path = project_root / "VectorDB Generation"
     faiss_index_path: Path = storage_dir / "catalog.index"
     sqlite_db_path: Path = storage_dir / "catalog.db"
 
