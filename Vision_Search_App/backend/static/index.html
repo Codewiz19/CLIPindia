@@ -4,350 +4,603 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ClothIndia Vision Search</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f6f8fc;
-      --surface: #ffffff;
-      --surface-2: #fbfcff;
-      --text: #171c28;
-      --muted: #667089;
-      --accent: #5a6cff;
-      --accent-2: #7d4dff;
-      --line: #e7ecf5;
-      --ring: #d9e2ff;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --border: #e2e8f0;
+      --ring: #c7d2fe;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --radius: 16px;
     }
-    * { box-sizing: border-box; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(1200px 600px at 12% -8%, #ebf0ff 0%, rgba(235, 240, 255, 0) 55%),
-        radial-gradient(1000px 550px at 100% -15%, #f2ebff 0%, rgba(242, 235, 255, 0) 55%),
-        var(--bg);
-      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: 60px;
     }
+
     .container {
-      max-width: 1140px;
-      margin: 28px auto 44px;
-      padding: 0 18px;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px;
     }
-    .hero {
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 60px 0 40px;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #1e1b4b, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    /* Search Interface Card */
+    .search-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 40px;
+    }
+
+    /* Mode Tabs */
+    .tabs {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .title {
-      font-size: clamp(26px, 3.6vw, 34px);
-      margin: 0 0 6px;
-      letter-spacing: 0.1px;
-      line-height: 1.1;
-    }
-    .subtitle {
-      color: var(--muted);
-      margin: 0;
-      font-size: 14px;
-    }
-    .pill {
-      font-size: 12px;
-      color: #3f52c7;
-      background: linear-gradient(180deg, #eef2ff 0%, #e7edff 100%);
-      border: 1px solid #dbe4ff;
-      border-radius: 999px;
-      padding: 7px 11px;
-      white-space: nowrap;
-      font-weight: 600;
-    }
-    .card {
-      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 18px;
-      box-shadow: 0 12px 34px rgba(29, 40, 77, .07);
-    }
-    .grid { display: grid; gap: 12px; }
-    .controls {
-      display: grid;
-      grid-template-columns: 1.3fr 1.4fr 1.7fr .9fr 1.1fr .9fr;
-      gap: 12px;
-      align-items: center;
-    }
-    .controls > * { min-width: 0; }
-    input, select, button {
-      width: 100%;
-      border: 1px solid var(--line);
+      background: #f1f5f9;
+      padding: 4px;
       border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 14px;
-      background: #fff;
-      color: var(--text);
+      margin-bottom: 24px;
     }
-    input:focus, select:focus {
-      outline: 2px solid var(--ring);
-      border-color: #b9c7ff;
-    }
-    input[type="range"] { padding: 0; }
-    input[type="file"] {
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
-    button {
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    .tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Inputs Grid */
+    .input-layout {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 1fr;
+    }
+
+    /* Drag & Drop Zone */
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #f8fafc;
+      position: relative;
+      overflow: hidden;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+    .upload-zone svg {
+      width: 40px;
+      height: 40px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+    .upload-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .upload-hint {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    #image { display: none; }
+    
+    /* Image Preview in Dropzone */
+    .preview-img {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: contain;
+      background: #f1f5f9;
+      display: none;
+      z-index: 10;
+    }
+    .remove-img {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(0,0,0,0.6);
       color: white;
       border: none;
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      font-size: 16px;
       cursor: pointer;
-      font-weight: 700;
-      box-shadow: 0 8px 18px rgba(90,108,255,.32);
-      transition: transform .15s ease, box-shadow .15s ease;
+      display: none;
+      z-index: 20;
     }
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 20px rgba(90,108,255,.34);
+
+    /* Form Controls */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .hint { font-size: 12px; color: var(--muted); }
-    .query-panel {
-      margin-top: 8px;
-      border: 1px dashed #d5def3;
-      border-radius: 14px;
-      padding: 10px;
-      background: #f9fbff;
-      display: grid;
-      grid-template-columns: 80px 1fr;
-      gap: 10px;
-      align-items: center;
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-main);
     }
-    .query-thumb {
-      width: 80px;
-      height: 80px;
-      border-radius: 10px;
-      object-fit: cover;
-      background: #eef2fb;
-      border: 1px solid #e1e8fb;
-    }
-    .query-title { font-size: 13px; font-weight: 600; }
-    .hidden { display: none; }
-    .results-header {
-      margin: 16px 4px 8px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .results {
-      display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
-    }
-    .item {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 10px;
-      transition: transform .15s ease, box-shadow .15s ease;
-    }
-    .item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 26px rgba(22,36,80,.10);
-    }
-    .thumb {
+    input[type="text"], select {
       width: 100%;
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
       border-radius: 10px;
-      background: #f1f4fb;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.2s;
     }
-    .meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
-    .score {
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+
+    /* Alpha Slider UI */
+    .alpha-container {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .alpha-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Toolbar (Bottom row of search card) */
+    .toolbar {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .btn-search {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-search:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-search:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Results Area */
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 24px;
+    }
+    .result-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .result-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+    .result-img-wrapper {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: #f1f5f9;
+      position: relative;
+    }
+    .result-img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .result-info {
+      padding: 16px;
+    }
+    .result-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .result-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .result-badge {
       display: inline-block;
-      margin-top: 6px;
-      font-size: 12px;
-      color: #3e56c4;
-      font-weight: 700;
-      background: #edf1ff;
-      border: 1px solid #dce5ff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      background: #e0e7ff;
+      padding: 4px 10px;
       border-radius: 999px;
-      padding: 3px 8px;
     }
     .empty-state {
-      border: 1px dashed #d8e0f2;
-      border-radius: 14px;
-      padding: 22px;
       text-align: center;
-      color: var(--muted);
-      background: #fafcff;
-      font-size: 13px;
+      padding: 60px 20px;
+      background: var(--card-bg);
+      border: 1px dashed #cbd5e1;
+      border-radius: var(--radius);
+      color: var(--text-muted);
     }
-    @media (max-width: 860px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .hero { flex-direction: column; align-items: flex-start; }
+
+    /* Helpers */
+    .hidden { display: none !important; }
+
+    @media (max-width: 640px) {
+      .toolbar { grid-template-columns: 1fr; }
+      .header { padding: 40px 0 20px; }
+      .header h1 { font-size: 2rem; }
     }
   </style>
 </head>
 <body>
+
   <div class="container">
-    <div class="hero">
-      <div>
-        <h1 class="title">ClothIndia Vision Search</h1>
-        <p class="subtitle">Multimodal local search powered by ONNX + FAISS</p>
+    <header class="header">
+      <h1>ClothIndia Vision Search</h1>
+      <p>High-speed multimodal local search powered by ONNX & FAISS</p>
+    </header>
+
+    <div class="search-card">
+      <div class="tabs" id="modeTabs">
+        <button class="tab active" data-mode="compositional">Multimodal (Image + Text)</button>
+        <button class="tab" data-mode="text">Text Only</button>
+        <button class="tab" data-mode="image">Image Only</button>
       </div>
-      <div class="pill">Top-k: 3 to 5 • Local only</div>
-    </div>
 
-    <div class="card grid">
-      <div class="controls">
-        <select id="mode">
-          <option value="compositional">Image + text (recommended)</option>
-          <option value="image">Image only</option>
-          <option value="text">Text only</option>
-        </select>
+      <div class="input-layout">
+        <div class="form-group" id="imageInputGroup">
+          <label>Reference Image</label>
+          <div class="upload-zone" id="uploadZone">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <div class="upload-text">Click to upload or drag and drop</div>
+            <div class="upload-hint">PNG, JPG up to 10MB</div>
+            <input type="file" id="image" accept="image/*" />
+            <img id="previewImg" class="preview-img" alt="Preview" />
+            <button id="removeImgBtn" class="remove-img" title="Remove image">×</button>
+          </div>
+        </div>
 
-        <input id="image" type="file" accept="image/*" />
-        <input id="text" type="text" placeholder="same green kurta" />
+        <div class="form-group" id="textInputGroup">
+          <label>Text Intent / Modifier</label>
+          <input type="text" id="text" placeholder="e.g. 'same green kurta' or 'blue jeans casual'" />
+        </div>
 
+        <div class="form-group" id="alphaGroup">
+          <label>Search Focus Weight</label>
+          <div class="alpha-container">
+            <div class="alpha-header">
+              <span>More Text Focus</span>
+              <span>More Image Focus</span>
+            </div>
+            <input id="alpha" type="range" min="0" max="1" step="0.05" value="0.65" />
+            <div style="text-align: center; font-size: 0.8rem; color: #64748b; margin-top: 8px;">
+              Alpha Value: <span id="alphaVal" style="font-weight: 600; color: #4f46e5;">0.65</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
         <select id="topk">
           <option value="3">Top 3</option>
           <option value="5" selected>Top 5</option>
+          <option value="10">Top 10</option>
         </select>
-
-        <div>
-          <input id="alpha" type="range" min="0" max="1" step="0.05" value="0.65" />
-          <div class="hint">alpha: <span id="alphaVal">0.65</span></div>
-        </div>
-
-        <button id="searchBtn">Search</button>
-      </div>
-      <div class="hint">Tip: try “a product photo of blue kurta, for women, ethnic wear”.</div>
-
-      <div id="queryPanel" class="query-panel hidden">
-        <img id="queryPreview" class="query-thumb" alt="query image" />
-        <div>
-          <div class="query-title">Current query image</div>
-          <div id="queryMeta" class="hint">No image selected</div>
-        </div>
+        
+        <button id="searchBtn" class="btn-search">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Run Search
+        </button>
       </div>
     </div>
 
-    <div id="resultsHeader" class="results-header"></div>
-    <div id="results" class="results">
-      <div class="empty-state">Run a search to see visual results here.</div>
+    <div id="resultsContainer">
+      <div class="results-header" id="resultsHeader">
+        <span>Search Results</span>
+      </div>
+      <div id="results" class="results-grid">
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#cbd5e1" style="margin-bottom: 16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <p>Run a search to see visual results here.</p>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
+    // --- DOM Elements ---
     const byId = (id) => document.getElementById(id);
-    const mode = byId('mode');
-    const image = byId('image');
-    const text = byId('text');
-    const topk = byId('topk');
-    const alpha = byId('alpha');
+    const modeTabs = document.querySelectorAll('.tab');
+    
+    // Inputs & Groups
+    const imageInputGroup = byId('imageInputGroup');
+    const textInputGroup = byId('textInputGroup');
+    const alphaGroup = byId('alphaGroup');
+    
+    // Controls
+    const imageInput = byId('image');
+    const textInput = byId('text');
+    const alphaSlider = byId('alpha');
     const alphaVal = byId('alphaVal');
+    const topkSelect = byId('topk');
     const searchBtn = byId('searchBtn');
-    const results = byId('results');
-    const queryPanel = byId('queryPanel');
-    const queryPreview = byId('queryPreview');
-    const queryMeta = byId('queryMeta');
+    
+    // Drag & Drop
+    const uploadZone = byId('uploadZone');
+    const previewImg = byId('previewImg');
+    const removeImgBtn = byId('removeImgBtn');
+    
+    // Results
+    const resultsGrid = byId('results');
     const resultsHeader = byId('resultsHeader');
 
-    let queryObjectUrl = null;
+    // State
+    let currentMode = 'compositional';
+    let selectedFile = null;
 
-    alpha.addEventListener('input', () => alphaVal.textContent = alpha.value);
+    // --- Tab Switching & UI Logic ---
+    modeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Update active class
+        modeTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        currentMode = tab.dataset.mode;
+        
+        // Show/Hide logic based on mode
+        if (currentMode === 'compositional') {
+          imageInputGroup.classList.remove('hidden');
+          textInputGroup.classList.remove('hidden');
+          alphaGroup.classList.remove('hidden');
+        } else if (currentMode === 'image') {
+          imageInputGroup.classList.remove('hidden');
+          textInputGroup.classList.add('hidden');
+          alphaGroup.classList.add('hidden');
+        } else if (currentMode === 'text') {
+          imageInputGroup.classList.add('hidden');
+          textInputGroup.classList.remove('hidden');
+          alphaGroup.classList.add('hidden');
+        }
+      });
+    });
 
-    function clearQueryPreview() {
-      if (queryObjectUrl) {
-        URL.revokeObjectURL(queryObjectUrl);
-        queryObjectUrl = null;
+    // Update Alpha Text
+    alphaSlider.addEventListener('input', () => {
+      alphaVal.textContent = alphaSlider.value;
+    });
+
+    // --- Drag and Drop File Logic ---
+    uploadZone.addEventListener('click', () => imageInput.click());
+    
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        handleFileSelect(e.dataTransfer.files[0]);
       }
-      queryPreview.removeAttribute('src');
-      queryMeta.textContent = 'No image selected';
-      queryPanel.classList.add('hidden');
-    }
+    });
+    
+    imageInput.addEventListener('change', (e) => {
+      if (e.target.files.length) handleFileSelect(e.target.files[0]);
+    });
 
-    function refreshQueryPreview() {
-      const needsImage = mode.value !== 'text';
-      if (!needsImage || !image.files.length) {
-        clearQueryPreview();
+    function handleFileSelect(file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
         return;
       }
-
-      if (queryObjectUrl) URL.revokeObjectURL(queryObjectUrl);
-      queryObjectUrl = URL.createObjectURL(image.files[0]);
-      queryPreview.src = queryObjectUrl;
-      queryMeta.textContent = image.files[0].name;
-      queryPanel.classList.remove('hidden');
+      selectedFile = file;
+      const url = URL.createObjectURL(file);
+      previewImg.src = url;
+      previewImg.style.display = 'block';
+      removeImgBtn.style.display = 'block';
     }
 
-    mode.addEventListener('change', refreshQueryPreview);
-    image.addEventListener('change', refreshQueryPreview);
+    removeImgBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering upload zone click
+      selectedFile = null;
+      imageInput.value = '';
+      previewImg.style.display = 'none';
+      previewImg.src = '';
+      removeImgBtn.style.display = 'none';
+    });
 
-    function card(item) {
+    // --- Search Card Rendering ---
+    function createResultCard(item) {
       const p = item.preview_path || item.source_path || '';
       const isImage = /\.(jpg|jpeg|png|webp|bmp|gif)$/i.test(p);
       const imgSrc = isImage ? `/media?path=${encodeURIComponent(p)}` : '';
+      
       return `
-        <div class="item">
-          ${isImage ? `<img class="thumb" src="${imgSrc}" alt="result" loading="lazy" />` : '<div class="thumb"></div>'}
-          <div><strong>${item.title || 'fashion item'}</strong></div>
-          <div class="meta">${item.media_type}${item.timestamp_sec != null ? ` • ${item.timestamp_sec.toFixed(1)}s` : ''}</div>
-          <div class="meta">${item.category || 'fashion'} • ${item.color || 'unknown'}</div>
-          <div class="score">score: ${Number(item.score).toFixed(4)}</div>
+        <div class="result-card">
+          <div class="result-img-wrapper">
+            ${isImage ? `<img src="${imgSrc}" alt="result" loading="lazy" />` : ''}
+          </div>
+          <div class="result-info">
+            <div class="result-title" title="${item.title || 'Fashion Item'}">${item.title || 'Fashion Item'}</div>
+            <div class="result-meta">${item.category || 'Apparel'} • ${item.color || 'Mixed'}</div>
+            <div class="result-badge">Score: ${Number(item.score).toFixed(3)}</div>
+          </div>
         </div>`;
     }
 
+    // --- Search Execution ---
     async function runSearch() {
-      searchBtn.disabled = true;
-      results.innerHTML = '';
-      resultsHeader.textContent = 'Searching...';
+      // Validation
+      if (currentMode !== 'text' && !selectedFile) {
+        alert('Please upload a reference image for this mode.');
+        return;
+      }
+      if (currentMode !== 'image' && !textInput.value.trim()) {
+        alert('Please enter a text intent for this mode.');
+        textInput.focus();
+        return;
+      }
 
-      const m = mode.value;
+      // UI Loading State
+      searchBtn.disabled = true;
+      searchBtn.innerHTML = 'Searching...';
+      resultsGrid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <p>Analyzing embeddings and querying FAISS...</p>
+        </div>`;
+      resultsHeader.innerHTML = `<span>Searching...</span>`;
+
+      // Build Form Data
       const form = new FormData();
-      form.append('top_k', topk.value);
+      form.append('top_k', topkSelect.value);
 
       let endpoint = '/search/compositional';
-      if (m === 'image') endpoint = '/search/image';
-      if (m === 'text') endpoint = '/search/text';
+      if (currentMode === 'image') endpoint = '/search/image';
+      if (currentMode === 'text') endpoint = '/search/text';
 
-      if (m !== 'text') {
-        if (!image.files.length) {
-          alert('Please choose an image.');
-          searchBtn.disabled = false;
-          return;
-        }
-        form.append('image', image.files[0]);
-      }
-      if (m !== 'image') {
-        if (!text.value.trim()) {
-          alert('Please enter text query/intent.');
-          searchBtn.disabled = false;
-          return;
-        }
+      if (currentMode !== 'text') form.append('image', selectedFile);
+      if (currentMode !== 'image') form.append('text', textInput.value.trim());
+      if (currentMode === 'compositional') {
+        form.append('text_intent', textInput.value.trim()); // To match backend specs
+        form.append('alpha', alphaSlider.value);
       }
 
-      if (m === 'text') form.append('text', text.value.trim());
-      if (m === 'compositional') {
-        form.append('text_intent', text.value.trim());
-        form.append('alpha', alpha.value);
-      }
-
+      // Execute API Call
       try {
         const res = await fetch(endpoint, { method: 'POST', body: form });
         const data = await res.json();
+        
         if (!res.ok) throw new Error(data.detail || 'Search failed');
+        
         if (!data.results?.length) {
-          resultsHeader.textContent = 'No matches found';
-          results.innerHTML = '<div class="meta">No results found.</div>';
+          resultsHeader.innerHTML = `<span>No matches found</span>`;
+          resultsGrid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+              <p>No visually similar results found. Try adjusting your text intent or alpha.</p>
+            </div>`;
         } else {
-          resultsHeader.textContent = `Showing ${data.results.length} result(s) • mode: ${data.query_mode}`;
-          results.innerHTML = data.results.map(card).join('');
+          resultsHeader.innerHTML = `<span>Showing ${data.results.length} results</span><span style="font-size:12px;color:var(--text-muted)">Mode: ${data.query_mode}</span>`;
+          resultsGrid.innerHTML = data.results.map(createResultCard).join('');
         }
       } catch (e) {
-        resultsHeader.textContent = 'Search failed';
-        results.innerHTML = `<div class="meta">${e.message}</div>`;
+        resultsHeader.innerHTML = `<span style="color:#ef4444;">Search Error</span>`;
+        resultsGrid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1; border-color:#fca5a5; background:#fef2f2; color:#b91c1c;">
+            <p>${e.message}</p>
+          </div>`;
       } finally {
         searchBtn.disabled = false;
+        searchBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Run Search
+        `;
       }
     }
 
-    refreshQueryPreview();
     searchBtn.addEventListener('click', runSearch);
+    
+    // Allow 'Enter' key to trigger search in text input
+    textInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') runSearch();
+    });
   </script>
 </body>
 </html>
