@@ -20,3 +20,4 @@ clipindia_export_bundle/
 *.faiss
 *.index
 *.db
+**/Dataset/

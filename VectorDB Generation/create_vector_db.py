@@ -1,4 +1,5 @@
 import argparse
+import csv
 import sqlite3
 from pathlib import Path
 
@@ -26,11 +27,35 @@ def list_images(root: Path, recursive: bool) -> list[Path]:
     return sorted(out)
 
 
+def load_styles_metadata(styles_csv: Path | None) -> dict[str, dict[str, str]]:
+    if styles_csv is None or not styles_csv.exists():
+        return {}
+
+    meta: dict[str, dict[str, str]] = {}
+    with open(styles_csv, "r", encoding="utf-8", errors="ignore") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rid = str(row.get("id", "")).strip()
+            if not rid:
+                continue
+            meta[rid] = {
+                "article_type": str(row.get("articleType", "") or "").strip(),
+                "base_colour": str(row.get("baseColour", "") or "").strip(),
+                "gender": str(row.get("gender", "") or "").strip(),
+                "usage": str(row.get("usage", "") or "").strip(),
+                "display_name": str(row.get("productDisplayName", "") or "").strip(),
+                "sub_category": str(row.get("subCategory", "") or "").strip(),
+                "master_category": str(row.get("masterCategory", "") or "").strip(),
+            }
+    return meta
+
+
 def build_vector_db(
     dataset_dir: Path,
     vision_onnx: Path,
     processor_dir: Path,
     out_dir: Path,
+    styles_csv: Path | None,
     batch_size: int,
     recursive: bool,
     provider: str,
@@ -44,6 +69,7 @@ def build_vector_db(
         raise RuntimeError(f"No images found under: {dataset_dir}")
 
     processor = AutoProcessor.from_pretrained(str(processor_dir))
+    styles_meta = load_styles_metadata(styles_csv)
 
     available = ort.get_available_providers()
     if provider == "cuda":
@@ -110,13 +136,43 @@ def build_vector_db(
         """
         CREATE TABLE items (
             item_id INTEGER PRIMARY KEY,
-            file_path TEXT NOT NULL UNIQUE
+            file_path TEXT NOT NULL UNIQUE,
+            article_type TEXT,
+            base_colour TEXT,
+            gender TEXT,
+            usage TEXT,
+            display_name TEXT,
+            sub_category TEXT,
+            master_category TEXT
         )
         """
     )
+
+    item_rows = []
+    for i, path_str in enumerate(processed_paths):
+        stem = Path(path_str).stem
+        m = styles_meta.get(stem, {})
+        item_rows.append(
+            (
+                i,
+                path_str,
+                m.get("article_type", ""),
+                m.get("base_colour", ""),
+                m.get("gender", ""),
+                m.get("usage", ""),
+                m.get("display_name", ""),
+                m.get("sub_category", ""),
+                m.get("master_category", ""),
+            )
+        )
+
     cur.executemany(
-        "INSERT INTO items(item_id, file_path) VALUES (?, ?)",
-        [(i, processed_paths[i]) for i in range(len(processed_paths))],
+        """
+        INSERT INTO items(
+            item_id, file_path, article_type, base_colour, gender, usage, display_name, sub_category, master_category
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        item_rows,
     )
     conn.commit()
     conn.close()
@@ -132,6 +188,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset-dir", type=Path, required=True)
     parser.add_argument("--vision-onnx", type=Path, required=True)
     parser.add_argument("--processor-dir", type=Path, required=True)
+    parser.add_argument(
+        "--styles-csv",
+        type=Path,
+        default=None,
+        help="Optional styles.csv for metadata enrichment (article/color/gender/usage/display_name)",
+    )
     parser.add_argument("--out-dir", type=Path, default=Path("VectorDB"))
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--recursive", action="store_true")
@@ -152,6 +214,7 @@ if __name__ == "__main__":
         vision_onnx=args.vision_onnx,
         processor_dir=args.processor_dir,
         out_dir=args.out_dir,
+        styles_csv=args.styles_csv,
         batch_size=args.batch_size,
         recursive=args.recursive,
         provider=args.provider,

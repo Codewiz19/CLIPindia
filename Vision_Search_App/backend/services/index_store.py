@@ -12,10 +12,19 @@ from tqdm import tqdm
 
 from backend.config import settings
 from backend.models import SearchResult
-from backend.services.color_utils import detect_requested_color, normalize_color
+from backend.services.color_utils import detect_requested_color, infer_color_from_image, normalize_color
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
+
+
+def _tokenize_query(text: str) -> set[str]:
+    tokens = []
+    for t in (text or "").lower().replace("/", " ").replace("-", " ").split():
+        t = t.strip(" ,.;:!?()[]{}\"'")
+        if len(t) >= 3:
+            tokens.append(t)
+    return set(tokens)
 
 
 class LocalVectorStore:
@@ -54,6 +63,20 @@ class LocalVectorStore:
             """
         )
         self.conn.commit()
+
+    def _table_exists(self, table_name: str) -> bool:
+        cur = self.conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+        return cur.fetchone() is not None
+
+    def _table_columns(self, table_name: str) -> set[str]:
+        cur = self.conn.cursor()
+        try:
+            cur.execute(f"PRAGMA table_info({table_name})")
+            rows = cur.fetchall()
+        except sqlite3.DatabaseError:
+            return set()
+        return {r[1] for r in rows}
 
     def _load_or_init_index(self) -> None:
         if settings.faiss_index_path.exists():
@@ -220,16 +243,34 @@ class LocalVectorStore:
 
     def _item_from_vector(self, vector_id: int) -> sqlite3.Row | None:
         cur = self.conn.cursor()
-        cur.execute(
-            """
-            SELECT i.*
-            FROM embeddings e
-            JOIN items i ON e.item_id = i.id
-            WHERE e.vector_id = ?
-            """,
-            (int(vector_id),),
-        )
-        return cur.fetchone()
+
+        items_cols = self._table_columns("items")
+        has_embeddings = self._table_exists("embeddings")
+
+        # Native schema path (app-managed DB)
+        if has_embeddings and {"id", "source_path"}.issubset(items_cols):
+            cur.execute(
+                """
+                SELECT i.*
+                FROM embeddings e
+                JOIN items i ON e.item_id = i.id
+                WHERE e.vector_id = ?
+                """,
+                (int(vector_id),),
+            )
+            row = cur.fetchone()
+            if row is not None:
+                return row
+
+        # Prebuilt VectorDB schema path: items(item_id, file_path)
+        if {"item_id", "file_path"}.issubset(items_cols):
+            cur.execute(
+                "SELECT * FROM items WHERE item_id = ?",
+                (int(vector_id),),
+            )
+            return cur.fetchone()
+
+        return None
 
     def search(self, query_vec: np.ndarray, top_k: int = 5, text_hint: str | None = None) -> list[SearchResult]:
         if self.vectors_count == 0:
@@ -239,6 +280,7 @@ class LocalVectorStore:
         D, I = self.index.search(query_vec.astype(np.float32), k=min(k * 4, self.vectors_count))
 
         requested_color = detect_requested_color(text_hint or "")
+        query_tokens = _tokenize_query(text_hint or "")
         out: list[SearchResult] = []
 
         for score, vector_id in zip(D[0], I[0]):
@@ -250,7 +292,43 @@ class LocalVectorStore:
                 continue
 
             adjusted_score = float(score)
-            row_color = normalize_color(row["color"])
+
+            # Normalize row across supported schemas
+            if "id" in row.keys():
+                row_id = int(row["id"])
+                row_media_type = row["media_type"]
+                row_source_path = row["source_path"]
+                row_preview_path = row["preview_path"]
+                row_timestamp = row["timestamp_sec"]
+                row_title = row["title"] or "fashion item"
+                row_category = row["category"] or "fashion"
+                row_color_raw = row["color"] or "unknown"
+            else:
+                # prebuilt schema fallback
+                row_id = int(row["item_id"])
+                row_media_type = "image"
+                row_source_path = row["file_path"]
+                row_preview_path = row["file_path"]
+                row_timestamp = None
+                row_title = (
+                    (row["display_name"] if "display_name" in row.keys() else None)
+                    or (row["article_type"] if "article_type" in row.keys() else None)
+                    or Path(row["file_path"]).stem.replace("_", " ")
+                )
+                row_category = (
+                    (row["master_category"] if "master_category" in row.keys() else None)
+                    or "fashion"
+                )
+                row_color_raw = (
+                    (row["base_colour"] if "base_colour" in row.keys() else None)
+                    or normalize_color(row_title)
+                )
+
+                # if no textual color metadata exists (e.g., numeric filenames), infer from image pixels
+                if row_color_raw == "unknown" and requested_color is not None:
+                    row_color_raw = infer_color_from_image(row_source_path)
+
+            row_color = normalize_color(row_color_raw)
 
             # light rerank boost for explicit color request
             if requested_color is not None:
@@ -259,16 +337,30 @@ class LocalVectorStore:
                 elif row_color != "unknown":
                     adjusted_score -= 0.01
 
+            # lexical rerank from metadata when available (helps short text queries)
+            if query_tokens and "item_id" in row.keys():
+                lexical_fields = [
+                    row_title,
+                    row_category,
+                    (row["article_type"] if "article_type" in row.keys() else ""),
+                    (row["usage"] if "usage" in row.keys() else ""),
+                    (row["gender"] if "gender" in row.keys() else ""),
+                    (row["sub_category"] if "sub_category" in row.keys() else ""),
+                ]
+                hay = " ".join([str(x).lower() for x in lexical_fields if x])
+                overlap = sum(1 for t in query_tokens if t in hay)
+                adjusted_score += 0.012 * overlap
+
             out.append(
                 SearchResult(
-                    item_id=int(row["id"]),
-                    media_type=row["media_type"],
-                    source_path=row["source_path"],
-                    preview_path=row["preview_path"],
-                    timestamp_sec=row["timestamp_sec"],
-                    title=row["title"] or "fashion item",
-                    category=row["category"] or "fashion",
-                    color=row["color"] or "unknown",
+                    item_id=row_id,
+                    media_type=row_media_type,
+                    source_path=row_source_path,
+                    preview_path=row_preview_path,
+                    timestamp_sec=row_timestamp,
+                    title=row_title,
+                    category=row_category,
+                    color=row_color,
                     score=adjusted_score,
                 )
             )
