@@ -18,6 +18,9 @@ class SearchResponse(BaseModel):
     query_mode: str
     top_k: int
     alpha: Optional[float] = None
+    normalized_text: Optional[str] = None
+    use_distiller_requested: Optional[bool] = None
+    use_distiller_effective: Optional[bool] = None
     results: list[SearchResult]
 
 

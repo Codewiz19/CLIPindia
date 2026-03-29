@@ -22,6 +22,11 @@ class Settings(BaseModel):
 
     sample_fps: float = 1.0
 
+    # Optional query distillation stage (PyTorch/Hugging Face)
+    enable_query_distiller: bool = True
+    query_distiller_model_id: str = "Qwen/Qwen2.5-0.5B-Instruct"
+    query_distiller_max_new_tokens: int = 24
+
 
 settings = Settings()
 settings.storage_dir.mkdir(parents=True, exist_ok=True)

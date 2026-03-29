@@ -137,14 +137,27 @@ def search_image(
 def search_text(
     text: str = Form(...),
     top_k: int = Form(settings.default_top_k),
+    use_distiller: bool = Form(True),
 ):
     if embedder is None or store is None:
         raise HTTPException(status_code=500, detail="Service not initialized")
 
-    normalized_text = embedder.normalize_user_query(text)
-    text_emb = embedder.embed_text(normalized_text)
+    effective_distiller = bool(use_distiller and embedder.can_use_distiller())
+    normalized_text = embedder.normalize_user_query(text, use_distiller=use_distiller)
+    text_emb = embedder.embed_text(
+        text,
+        use_distiller=use_distiller,
+        normalized_text=normalized_text,
+    )
     results = store.search(text_emb, top_k=top_k, text_hint=normalized_text)
-    return SearchResponse(query_mode="text", top_k=min(max(top_k, 3), 5), results=results)
+    return SearchResponse(
+        query_mode="text",
+        top_k=min(max(top_k, 3), 5),
+        normalized_text=normalized_text,
+        use_distiller_requested=bool(use_distiller),
+        use_distiller_effective=effective_distiller,
+        results=results,
+    )
 
 
 @app.post("/search/compositional", response_model=SearchResponse)
@@ -153,16 +166,22 @@ def search_compositional(
     text_intent: str = Form(...),
     top_k: int = Form(settings.default_top_k),
     alpha: float = Form(settings.default_alpha),
+    use_distiller: bool = Form(True),
 ):
     if embedder is None or store is None:
         raise HTTPException(status_code=500, detail="Service not initialized")
 
+    effective_distiller = bool(use_distiller and embedder.can_use_distiller())
     alpha = min(max(alpha, 0.0), 1.0)
     pil = _read_image_upload(image)
 
     image_emb = embedder.embed_image(pil)
-    normalized_text = embedder.normalize_user_query(text_intent)
-    text_emb = embedder.embed_text(normalized_text)
+    normalized_text = embedder.normalize_user_query(text_intent, use_distiller=use_distiller)
+    text_emb = embedder.embed_text(
+        text_intent,
+        use_distiller=use_distiller,
+        normalized_text=normalized_text,
+    )
     query_vec = embedder.compose_query(image_emb, text_emb, alpha=alpha)
 
     results = store.search(query_vec, top_k=top_k, text_hint=normalized_text)
@@ -170,5 +189,8 @@ def search_compositional(
         query_mode="compositional",
         top_k=min(max(top_k, 3), 5),
         alpha=alpha,
+        normalized_text=normalized_text,
+        use_distiller_requested=bool(use_distiller),
+        use_distiller_effective=effective_distiller,
         results=results,
     )

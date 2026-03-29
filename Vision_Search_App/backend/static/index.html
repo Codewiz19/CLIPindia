@@ -168,6 +168,66 @@
       flex-direction: column;
       gap: 8px;
     }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .toggle-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      color: var(--text-main);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .toggle-copy small {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.75rem;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #cbd5e1;
+      transition: .2s;
+      border-radius: 999px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      top: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+      box-shadow: var(--shadow-sm);
+    }
+    .switch input:checked + .slider {
+      background-color: var(--primary);
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(20px);
+    }
     label {
       font-size: 0.875rem;
       font-weight: 600;
@@ -249,6 +309,43 @@
       margin-bottom: 20px;
       font-weight: 600;
       color: var(--text-main);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .query-insight {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .query-insight strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: #f8fafc;
+    }
+    .status-chip.ok {
+      color: #166534;
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+    .status-chip.warn {
+      color: #9a3412;
+      border-color: #fdba74;
+      background: #fff7ed;
     }
     .results-grid {
       display: grid;
@@ -356,6 +453,19 @@
           <input type="text" id="text" placeholder="e.g. 'same green kurta' or 'blue jeans casual'" />
         </div>
 
+        <div class="form-group" id="distillerGroup">
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              Query Distiller
+              <small>ON: better understanding of messy prompts, OFF: legacy pipeline</small>
+            </div>
+            <label class="switch" title="Toggle query distiller">
+              <input type="checkbox" id="useDistiller" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
         <div class="form-group" id="alphaGroup">
           <label>Search Focus Weight</label>
           <div class="alpha-container">
@@ -411,6 +521,7 @@
     const imageInputGroup = byId('imageInputGroup');
     const textInputGroup = byId('textInputGroup');
     const alphaGroup = byId('alphaGroup');
+    const distillerGroup = byId('distillerGroup');
     
     // Controls
     const imageInput = byId('image');
@@ -418,6 +529,7 @@
     const alphaSlider = byId('alpha');
     const alphaVal = byId('alphaVal');
     const topkSelect = byId('topk');
+    const useDistiller = byId('useDistiller');
     const searchBtn = byId('searchBtn');
     
     // Drag & Drop
@@ -447,14 +559,17 @@
           imageInputGroup.classList.remove('hidden');
           textInputGroup.classList.remove('hidden');
           alphaGroup.classList.remove('hidden');
+          distillerGroup.classList.remove('hidden');
         } else if (currentMode === 'image') {
           imageInputGroup.classList.remove('hidden');
           textInputGroup.classList.add('hidden');
           alphaGroup.classList.add('hidden');
+          distillerGroup.classList.add('hidden');
         } else if (currentMode === 'text') {
           imageInputGroup.classList.add('hidden');
           textInputGroup.classList.remove('hidden');
           alphaGroup.classList.add('hidden');
+          distillerGroup.classList.remove('hidden');
         }
       });
     });
@@ -524,6 +639,43 @@
         </div>`;
     }
 
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderQueryInsight(rawText, normalizedText) {
+      if (!rawText || !normalizedText) return '';
+      if (rawText.toLowerCase() === normalizedText.toLowerCase()) return '';
+
+      return `
+        <div class="query-insight">
+          <strong>Query refined:</strong>
+          “${escapeHtml(rawText)}” → “${escapeHtml(normalizedText)}”
+        </div>
+      `;
+    }
+
+    function renderDistillerStatus(data) {
+      if (data?.query_mode === 'image') return '';
+      const requested = data?.use_distiller_requested;
+      const effective = data?.use_distiller_effective;
+      if (requested === true && effective === true) {
+        return `<span class="status-chip ok">Distiller: active</span>`;
+      }
+      if (requested === true && effective === false) {
+        return `<span class="status-chip warn">Distiller requested, fallback active</span>`;
+      }
+      if (requested === false) {
+        return `<span class="status-chip">Distiller: off</span>`;
+      }
+      return '';
+    }
+
     // --- Search Execution ---
     async function runSearch() {
       // Validation
@@ -549,15 +701,19 @@
       // Build Form Data
       const form = new FormData();
       form.append('top_k', topkSelect.value);
+      const rawText = textInput.value.trim();
 
       let endpoint = '/search/compositional';
       if (currentMode === 'image') endpoint = '/search/image';
       if (currentMode === 'text') endpoint = '/search/text';
 
       if (currentMode !== 'text') form.append('image', selectedFile);
-      if (currentMode !== 'image') form.append('text', textInput.value.trim());
+      if (currentMode === 'text') form.append('text', rawText);
+      if (currentMode !== 'image') {
+        form.append('use_distiller', useDistiller.checked ? 'true' : 'false');
+      }
       if (currentMode === 'compositional') {
-        form.append('text_intent', textInput.value.trim()); // To match backend specs
+        form.append('text_intent', rawText);
         form.append('alpha', alphaSlider.value);
       }
 
@@ -575,7 +731,12 @@
               <p>No visually similar results found. Try adjusting your text intent or alpha.</p>
             </div>`;
         } else {
-          resultsHeader.innerHTML = `<span>Showing ${data.results.length} results</span><span style="font-size:12px;color:var(--text-muted)">Mode: ${data.query_mode}</span>`;
+          resultsHeader.innerHTML = `
+            <span>Showing ${data.results.length} results</span>
+            <span style="font-size:12px;color:var(--text-muted)">Mode: ${data.query_mode}</span>
+            ${renderDistillerStatus(data)}
+            ${renderQueryInsight(rawText, data.normalized_text)}
+          `;
           resultsGrid.innerHTML = data.results.map(createResultCard).join('');
         }
       } catch (e) {
