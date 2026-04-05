@@ -1,0 +1,14 @@
+# Build FAISS + SQLite vector database from an image dataset (no CSV required).
+# Replace values in <> before running.
+
+& ".\.venv\Scripts\python.exe" ".\VectorDB Generation\create_vector_db.py" `
+  --dataset-dir "<ABSOLUTE_PATH_TO_IMAGE_DATASET>" `      # Root folder containing images
+  --vision-onnx "<ABSOLUTE_PATH_TO_VISION_ONNX>" `        # vision.onnx path
+  --processor-dir "<ABSOLUTE_PATH_TO_HF_PROCESSOR_DIR>" ` # hf_processor directory
+  --out-dir "<ABSOLUTE_PATH_TO_OUTPUT_FOLDER>" `          # Writes catalog.index + catalog.db
+  --recursive `                                           # Scan subfolders recursively
+  --provider "<cuda|cpu|auto>" `                          # Inference provider
+  --batch-size 128                                       
+    # Tune for your GPU/CPU memory
+
+

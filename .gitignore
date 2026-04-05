@@ -19,5 +19,7 @@ clipindia_export_bundle/
 **/storage/
 *.faiss
 *.index
+*.index.bak
 *.db
+*.db.bak
 **/Dataset/
